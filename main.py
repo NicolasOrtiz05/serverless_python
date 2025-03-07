@@ -72,5 +72,5 @@ def seller_data(user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return {"message": "Datos exclusivos para vendedores"}
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     uvicorn.run(app, host="0.0.0.0", port=8080)
