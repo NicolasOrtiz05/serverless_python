@@ -3,24 +3,31 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt  # PyJWT
 import uvicorn
 
-app = FastAPI(title="API con autenticación JWT sin firma.", description=
-              """
-Samuel Espitia Cruz
-Edwin Alejandro Gutirrez
-Nicolas Stiven Ortiz Corrtes
-              """,version="1.0.0")
+app = FastAPI(
+    title="API de Autenticación y Roles",
+    description="API con autenticación JWT que distingue entre compradores y vendedores.",
+    version="1.0.0"
+)
 
-# Secret para firmar el JWT
+security = HTTPBearer()
+
+app.openapi_schema = {
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}
+
 SECRET_KEY = ""
-
-# Usuarios quemados 
 USERS_DB = {
     "buyer1": {"password": "buyerpass", "role": "buyer"},
     "seller1": {"password": "sellerpass", "role": "seller"},
 }
-
-# Configuración del esquema de autenticación
-security = HTTPBearer()
 
 def generate_jwt(username: str, role: str):
     """Genera un token JWT sin firmar."""
@@ -34,7 +41,7 @@ def decode_jwt(token: str):
     except jwt.PyJWTError:
         return None
 
-@app.post("/", tags=["Autenticación"], summary="Login")
+@app.post("/", tags=["Autenticación"], summary="Autentica a un usuario y devuelve un token JWT")
 def login(data: dict):
     """Endpoint de autenticación: devuelve un JWT."""
     username, password = data.get("username"), data.get("password")
@@ -53,24 +60,24 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
         raise HTTPException(status_code=403, detail="Token inválido")
     return payload
 
-@app.get("/public/data", tags=["Datos"], summary="Public Data")
+@app.get("/public/data", tags=["Datos"], summary="Endpoint accesible para compradores y vendedores", security=[{"bearerAuth": []}])
 def public_data(user: dict = Depends(get_current_user)):
-    """Endpoint accesible para compradores y vendedores."""
+    """Datos accesibles para ambos roles."""
     return {"message": "Datos accesibles para ambos roles"}
 
-@app.get("/buyer/data", tags=["Compradores"], summary="Buyer Data")
+@app.get("/buyer/data", tags=["Compradores"], summary="Endpoint accesible solo para compradores", security=[{"bearerAuth": []}])
 def buyer_data(user: dict = Depends(get_current_user)):
-    """Endpoint solo para compradores."""
+    """Datos exclusivos para compradores."""
     if user["role"] != "buyer":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return {"message": "Datos exclusivos para compradores"}
 
-@app.get("/seller/data", tags=["Vendedores"], summary="Seller Data")
+@app.get("/seller/data", tags=["Vendedores"], summary="Endpoint accesible solo para vendedores", security=[{"bearerAuth": []}])
 def seller_data(user: dict = Depends(get_current_user)):
-    """Endpoint solo para vendedores."""
+    """Datos exclusivos para vendedores."""
     if user["role"] != "seller":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return {"message": "Datos exclusivos para vendedores"}
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
