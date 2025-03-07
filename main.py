@@ -3,9 +3,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt  # PyJWT
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(title="API con autenticación JWT sin firma.", description=
+              """
+Samuel Espitia Cruz
+Edwin Alejandro Gutirrez
+Nicolas Stiven Ortiz Corrtes
+              """,version="1.0.0")
 
-# Secret para firmar el JWT (lo dejamos vacío para simular "sin firma")
+# Secret para firmar el JWT
 SECRET_KEY = ""
 
 # Usuarios quemados 
@@ -29,7 +34,7 @@ def decode_jwt(token: str):
     except jwt.PyJWTError:
         return None
 
-@app.post("/")
+@app.post("/", tags=["Autenticación"], summary="Login")
 def login(data: dict):
     """Endpoint de autenticación: devuelve un JWT."""
     username, password = data.get("username"), data.get("password")
@@ -48,25 +53,24 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
         raise HTTPException(status_code=403, detail="Token inválido")
     return payload
 
-@app.get("/public/data")
+@app.get("/public/data", tags=["Datos"], summary="Public Data")
 def public_data(user: dict = Depends(get_current_user)):
     """Endpoint accesible para compradores y vendedores."""
     return {"message": "Datos accesibles para ambos roles"}
 
-@app.get("/buyer/data")
+@app.get("/buyer/data", tags=["Compradores"], summary="Buyer Data")
 def buyer_data(user: dict = Depends(get_current_user)):
     """Endpoint solo para compradores."""
     if user["role"] != "buyer":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return {"message": "Datos exclusivos para compradores"}
 
-@app.get("/seller/data")
+@app.get("/seller/data", tags=["Vendedores"], summary="Seller Data")
 def seller_data(user: dict = Depends(get_current_user)):
     """Endpoint solo para vendedores."""
     if user["role"] != "seller":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return {"message": "Datos exclusivos para vendedores"}
 
-# Para desarrollo local
-if __name__ == "__main__":
+if _name_ == "_main_":
     uvicorn.run(app, host="0.0.0.0", port=8080)
