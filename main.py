@@ -7,7 +7,7 @@ app = FastAPI(title="API con autenticación JWT sin firma.", description=
               """
 Samuel Espitia Cruz
 Edwin Alejandro Gutirrez
-Nicolas Stiven Ortiz Corrtes
+Nicolas Stiven Ortiz Cortes
               """,version="1.0.0")
 
 # Secret para firmar el JWT
