@@ -71,11 +71,16 @@ def seller_data(user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return {"message": "Datos exclusivos para vendedores"}
 
-
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
+    
     openapi_schema = app.openapi()
+    
+
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+
     openapi_schema["components"]["securitySchemes"] = {
         "bearerAuth": {
             "type": "http",
@@ -83,13 +88,17 @@ def custom_openapi():
             "bearerFormat": "JWT"
         }
     }
+
+    # Asegurar que cada endpoint en paths tenga seguridad
     for path in openapi_schema["paths"].values():
         for method in path.values():
-            method["security"] = [{"bearerAuth": []}]
+            if "security" not in method:
+                method["security"] = [{"bearerAuth": []}]
+
     app.openapi_schema = openapi_schema
     return openapi_schema
 
-app.openapi = custom_openapi  
+app.openapi = custom_openapi  # Reemplaza el OpenAPI generado por FastAPI
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
